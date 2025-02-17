@@ -15,7 +15,7 @@ function Invoke-CIPPStandardQuarantineRequestAlert {
         TAG
             "lowimpact"
         ADDEDCOMPONENT
-            {"type":"input","name":"standards.QuarantineRequestAlert.NotifyUser","label":"E-mail to receive the alert"}
+            {"type":"textField","name":"standards.QuarantineRequestAlert.NotifyUser","label":"E-mail to receive the alert"}
         IMPACT
             Low Impact
         POWERSHELLEQUIVALENT
@@ -24,15 +24,17 @@ function Invoke-CIPPStandardQuarantineRequestAlert {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/defender-standards#low-impact
     #>
 
     param ($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'QuarantineRequestAlert'
+
     $PolicyName = 'CIPP User requested to release a quarantined message'
 
     $CurrentState = New-ExoRequest -TenantId $Tenant -cmdlet 'Get-ProtectionAlert' -Compliance |
-        Where-Object { $_.Name -eq $PolicyName } |
-        Select-Object -Property *
+    Where-Object { $_.Name -eq $PolicyName } |
+    Select-Object -Property *
 
     $StateIsCorrect = ($CurrentState.NotifyUser -contains $Settings.NotifyUser)
 
@@ -41,11 +43,11 @@ function Invoke-CIPPStandardQuarantineRequestAlert {
             Write-LogMessage -API 'Standards' -Tenant $Tenant -Message 'Quarantine Request Alert is configured correctly' -sev Info
         } else {
             $cmdparams = @{
-                'NotifyUser'        = $Settings.NotifyUser
-                'Category'          = 'ThreatManagement'
-                'Operation'         = 'QuarantineRequestReleaseMessage'
-                'Severity'          = 'Informational'
-                'AggregationType'   = 'None'
+                'NotifyUser'      = $Settings.NotifyUser
+                'Category'        = 'ThreatManagement'
+                'Operation'       = 'QuarantineRequestReleaseMessage'
+                'Severity'        = 'Informational'
+                'AggregationType' = 'None'
             }
 
             if ($CurrentState.Name -eq $PolicyName) {
@@ -62,7 +64,7 @@ function Invoke-CIPPStandardQuarantineRequestAlert {
             } else {
                 try {
                     $cmdparams += @{
-                        'Name' = $PolicyName
+                        'Name'       = $PolicyName
                         'ThreatType' = 'Activity'
                     }
                     New-ExoRequest -TenantId $Tenant -cmdlet 'New-ProtectionAlert' -Compliance -cmdparams $cmdparams -UseSystemMailbox $true

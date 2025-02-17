@@ -15,7 +15,7 @@ function Invoke-CIPPStandardDisableAddShortcutsToOneDrive {
         TAG
             "mediumimpact"
         ADDEDCOMPONENT
-            {"type":"Select","label":"Add Shortcuts To OneDrive button state","name":"standards.DisableAddShortcutsToOneDrive.state","values":[{"label":"Disabled","value":"true"},{"label":"Enabled","value":"false"}]}
+            {"type":"autoComplete","multiple":false,"label":"Add Shortcuts To OneDrive button state","name":"standards.DisableAddShortcutsToOneDrive.state","options":[{"label":"Disabled","value":"true"},{"label":"Enabled","value":"false"}]}
         IMPACT
             Medium Impact
         POWERSHELLEQUIVALENT
@@ -24,10 +24,11 @@ function Invoke-CIPPStandardDisableAddShortcutsToOneDrive {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/sharepoint-standards#medium-impact
     #>
 
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'DisableAddShortcutsToOneDrive'
 
     $CurrentState = Get-CIPPSPOTenant -TenantFilter $Tenant | Select-Object _ObjectIdentity_, TenantFilter, DisableAddToOneDrive
 

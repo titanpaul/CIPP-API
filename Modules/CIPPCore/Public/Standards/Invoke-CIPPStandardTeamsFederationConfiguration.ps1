@@ -15,10 +15,10 @@ Function Invoke-CIPPStandardTeamsFederationConfiguration {
         TAG
             "mediumimpact"
         ADDEDCOMPONENT
-            {"type":"boolean","name":"standards.TeamsFederationConfiguration.AllowTeamsConsumer","label":"Allow users to communicate with other organizations"}
-            {"type":"boolean","name":"standards.TeamsFederationConfiguration.AllowPublicUsers","label":"Allow users to communicate with Skype Users"}
-            {"type":"Select","name":"standards.TeamsFederationConfiguration.DomainControl","label":"Communication Mode","values":[{"label":"Allow all external domains","value":"AllowAllExternal"},{"label":"Block all external domains","value":"BlockAllExternal"},{"label":"Allow specific external domains","value":"AllowSpecificExternal"},{"label":"Block specific external domains","value":"BlockSpecificExternal"}]}
-            {"type":"input","name":"standards.TeamsFederationConfiguration.DomainList","label":"Domains, Comma separated"}
+            {"type":"switch","name":"standards.TeamsFederationConfiguration.AllowTeamsConsumer","label":"Allow users to communicate with other organizations"}
+            {"type":"switch","name":"standards.TeamsFederationConfiguration.AllowPublicUsers","label":"Allow users to communicate with Skype Users"}
+            {"type":"autoComplete","multiple":false,"name":"standards.TeamsFederationConfiguration.DomainControl","label":"Communication Mode","options":[{"label":"Allow all external domains","value":"AllowAllExternal"},{"label":"Block all external domains","value":"BlockAllExternal"},{"label":"Allow specific external domains","value":"AllowSpecificExternal"},{"label":"Block specific external domains","value":"BlockSpecificExternal"}]}
+            {"type":"textField","name":"standards.TeamsFederationConfiguration.DomainList","label":"Domains, Comma separated","required":false}
         IMPACT
             Medium Impact
         POWERSHELLEQUIVALENT
@@ -27,14 +27,16 @@ Function Invoke-CIPPStandardTeamsFederationConfiguration {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/teams-standards#medium-impact
     #>
 
     param($Tenant, $Settings)
-    $CurrentState = New-TeamsRequest -TenantFilter $Tenant -Cmdlet 'Get-CsTenantFederationConfiguration' -CmdParams @{Identity = 'Global'}
-                | Select-Object *
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'TeamsFederationConfiguration'
 
-    Switch ($Settings.DomainControl) {
+    $CurrentState = New-TeamsRequest -TenantFilter $Tenant -Cmdlet 'Get-CsTenantFederationConfiguration' -CmdParams @{Identity = 'Global' }
+    | Select-Object *
+
+    Switch ($Settings.DomainControl.value) {
         'AllowAllExternal' {
             $AllowFederatedUsers = $true
             $AllowedDomainsAsAList = 'AllowAllKnownDomains'
@@ -63,12 +65,16 @@ Function Invoke-CIPPStandardTeamsFederationConfiguration {
                 $BlockedDomains = @()
             }
         }
+        Default {
+            Write-LogMessage -API 'Standards' -tenant $Tenant -message "Federation Configuration: Invalid $($Settings.DomainControl.value) parameter" -sev Error
+            Return
+        }
     }
 
     # TODO : Add proper validation for the domain list
     # $CurrentState.AllowedDomains returns a PSObject System.Object and adds a Domain= for each allowed domain, ex {Domain=example.com, Domain=example2.com}
 
-    $StateIsCorrect =   ($CurrentState.AllowTeamsConsumer -eq $Settings.AllowTeamsConsumer) -and
+    $StateIsCorrect = ($CurrentState.AllowTeamsConsumer -eq $Settings.AllowTeamsConsumer) -and
                         ($CurrentState.AllowPublicUsers -eq $Settings.AllowPublicUsers) -and
                         ($CurrentState.AllowFederatedUsers -eq $AllowFederatedUsers) -and
                         ($CurrentState.AllowedDomains -eq $AllowedDomainsAsAList) -and
@@ -79,12 +85,12 @@ Function Invoke-CIPPStandardTeamsFederationConfiguration {
             Write-LogMessage -API 'Standards' -tenant $Tenant -message 'Federation Configuration already set.' -sev Info
         } else {
             $cmdparams = @{
-                Identity = 'Global'
-                AllowTeamsConsumer = $Settings.AllowTeamsConsumer
-                AllowPublicUsers = $Settings.AllowPublicUsers
-                AllowFederatedUsers = $AllowFederatedUsers
+                Identity              = 'Global'
+                AllowTeamsConsumer    = $Settings.AllowTeamsConsumer
+                AllowPublicUsers      = $Settings.AllowPublicUsers
+                AllowFederatedUsers   = $AllowFederatedUsers
                 AllowedDomainsAsAList = $AllowedDomainsAsAList
-                BlockedDomains = $BlockedDomains
+                BlockedDomains        = $BlockedDomains
             }
 
             try {

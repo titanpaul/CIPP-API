@@ -15,7 +15,7 @@ function Invoke-CIPPStandardBookings {
         TAG
             "mediumimpact"
         ADDEDCOMPONENT
-            {"type":"Select","label":"Select value","name":"standards.Bookings.state","values":[{"label":"Enabled","value":"true"},{"label":"Disabled","value":"false"}]}
+            {"type":"select","multiple":false,"label":"Select value","name":"standards.Bookings.state","options":[{"label":"Enabled","value":"true"},{"label":"Disabled","value":"false"}]}
         IMPACT
             Medium Impact
         POWERSHELLEQUIVALENT
@@ -24,10 +24,11 @@ function Invoke-CIPPStandardBookings {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/exchange-standards#medium-impact
     #>
 
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'Bookings'
 
     $CurrentState = (New-ExoRequest -tenantid $Tenant -cmdlet 'Get-OrganizationConfig').BookingsEnabled
     $WantedState = if ($Settings.state -eq 'true') { $true } else { $false }

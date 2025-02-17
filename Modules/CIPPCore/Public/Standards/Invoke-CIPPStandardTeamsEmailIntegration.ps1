@@ -15,7 +15,7 @@ Function Invoke-CIPPStandardTeamsEmailIntegration {
         TAG
             "lowimpact"
         ADDEDCOMPONENT
-            {"type":"boolean","name":"standards.TeamsEmailIntegration.AllowEmailIntoChannel","label":"Allow channel emails"}
+            {"type":"switch","name":"standards.TeamsEmailIntegration.AllowEmailIntoChannel","label":"Allow channel emails"}
         IMPACT
             Low Impact
         POWERSHELLEQUIVALENT
@@ -25,14 +25,16 @@ Function Invoke-CIPPStandardTeamsEmailIntegration {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/teams-standards#low-impact
     #>
 
     param($Tenant, $Settings)
-    $CurrentState = New-TeamsRequest -TenantFilter $Tenant -Cmdlet 'Get-CsTeamsClientConfiguration' -CmdParams @{Identity = 'Global'}
-                | Select-Object AllowEmailIntoChannel
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'TeamsEmailIntegration'
 
-    if ($null -eq $Settings.AllowEmailIntoChannel)   { $Settings.AllowEmailIntoChannel = $false }
+    $CurrentState = New-TeamsRequest -TenantFilter $Tenant -Cmdlet 'Get-CsTeamsClientConfiguration' -CmdParams @{Identity = 'Global' }
+    | Select-Object AllowEmailIntoChannel
+
+    if ($null -eq $Settings.AllowEmailIntoChannel) { $Settings.AllowEmailIntoChannel = $false }
 
     $StateIsCorrect = ($CurrentState.AllowEmailIntoChannel -eq $Settings.AllowEmailIntoChannel)
 
@@ -41,8 +43,8 @@ Function Invoke-CIPPStandardTeamsEmailIntegration {
             Write-LogMessage -API 'Standards' -tenant $Tenant -message 'Teams Email Integration settings already set.' -sev Info
         } else {
             $cmdparams = @{
-                Identity                = 'Global'
-                AllowEmailIntoChannel   = $Settings.AllowEmailIntoChannel
+                Identity              = 'Global'
+                AllowEmailIntoChannel = $Settings.AllowEmailIntoChannel
             }
 
             try {

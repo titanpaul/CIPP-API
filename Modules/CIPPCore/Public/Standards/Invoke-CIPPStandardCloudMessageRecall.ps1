@@ -15,7 +15,7 @@ function Invoke-CIPPStandardCloudMessageRecall {
         TAG
             "lowimpact"
         ADDEDCOMPONENT
-            {"type":"Select","label":"Select value","name":"standards.CloudMessageRecall.state","values":[{"label":"Enabled","value":"true"},{"label":"Disabled","value":"false"}]}
+            {"type":"select","multiple":false,"label":"Select value","name":"standards.CloudMessageRecall.state","options":[{"label":"Enabled","value":"true"},{"label":"Disabled","value":"false"}]}
         IMPACT
             Low Impact
         POWERSHELLEQUIVALENT
@@ -24,10 +24,11 @@ function Invoke-CIPPStandardCloudMessageRecall {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/exchange-standards#low-impact
     #>
 
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'CloudMessageRecall'
 
     $CurrentState = (New-ExoRequest -tenantid $Tenant -cmdlet 'Get-OrganizationConfig').MessageRecallEnabled
     $WantedState = if ($Settings.state -eq 'true') { $true } else { $false }

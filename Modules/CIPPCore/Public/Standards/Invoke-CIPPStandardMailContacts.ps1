@@ -15,10 +15,10 @@ function Invoke-CIPPStandardMailContacts {
         TAG
             "lowimpact"
         ADDEDCOMPONENT
-            {"type":"input","name":"standards.MailContacts.GeneralContact","label":"General Contact"}
-            {"type":"input","name":"standards.MailContacts.SecurityContact","label":"Security Contact"}
-            {"type":"input","name":"standards.MailContacts.MarketingContact","label":"Marketing Contact"}
-            {"type":"input","name":"standards.MailContacts.TechContact","label":"Technical Contact"}
+            {"type":"textField","name":"standards.MailContacts.GeneralContact","label":"General Contact","required":false}
+            {"type":"textField","name":"standards.MailContacts.SecurityContact","label":"Security Contact","required":false}
+            {"type":"textField","name":"standards.MailContacts.MarketingContact","label":"Marketing Contact","required":false}
+            {"type":"textField","name":"standards.MailContacts.TechContact","label":"Technical Contact","required":false}
         IMPACT
             Low Impact
         POWERSHELLEQUIVALENT
@@ -27,10 +27,12 @@ function Invoke-CIPPStandardMailContacts {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/global-standards#low-impact
     #>
 
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'MailContacts'
+
     $TenantID = (New-GraphGetRequest -Uri 'https://graph.microsoft.com/beta/organization' -tenantid $tenant)
     $CurrentInfo = New-GraphGetRequest -Uri "https://graph.microsoft.com/beta/organization/$($TenantID.id)" -tenantid $Tenant
     $contacts = $settings

@@ -15,6 +15,7 @@ function Invoke-CIPPStandardDisableSharePointLegacyAuth {
         TAG
             "mediumimpact"
             "CIS"
+            "spo_legacy_auth"
         ADDEDCOMPONENT
         IMPACT
             Medium Impact
@@ -25,10 +26,11 @@ function Invoke-CIPPStandardDisableSharePointLegacyAuth {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/sharepoint-standards#medium-impact
     #>
 
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'DisableSharePointLegacyAuth'
 
     $CurrentInfo = New-GraphGetRequest -Uri 'https://graph.microsoft.com/beta/admin/sharepoint/settings?$select=isLegacyAuthProtocolsEnabled' -tenantid $Tenant -AsApp $true
 

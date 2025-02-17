@@ -23,11 +23,13 @@ function Invoke-CIPPStandardSPDisableLegacyWorkflows {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/edit-standards
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/sharepoint-standards#low-impact
     #>
     param($Tenant, $Settings)
+    ##$Rerun -Type Standard -Tenant $Tenant -Settings $Settings 'SPDisableLegacyWorkflows'
+
     $CurrentState = Get-CIPPSPOTenant -TenantFilter $Tenant |
-        Select-Object -Property *
+    Select-Object -Property *
 
     $StateIsCorrect = ($CurrentState.StopNew2010Workflows -eq $true) -and
                       ($CurrentState.StopNew2013Workflows -eq $true) -and
