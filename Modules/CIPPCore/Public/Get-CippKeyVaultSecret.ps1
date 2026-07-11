@@ -37,10 +37,9 @@ function Get-CippKeyVaultSecret {
     try {
         # Derive vault name if not provided
         if (-not $VaultName) {
-            if ($env:WEBSITE_DEPLOYMENT_ID) {
-                $VaultName = ($env:WEBSITE_DEPLOYMENT_ID -split '-')[0]
-            } else {
-                throw 'VaultName not provided and WEBSITE_DEPLOYMENT_ID environment variable not set'
+            $VaultName = Get-CippKeyVaultName
+            if (-not $VaultName) {
+                throw 'VaultName not provided and could not be derived (WEBSITE_SITE_NAME / WEBSITE_DEPLOYMENT_ID not set)'
             }
         }
 
@@ -55,7 +54,7 @@ function Get-CippKeyVaultSecret {
 
         for ($i = 0; $i -lt $maxRetries; $i++) {
             try {
-                $response = Invoke-RestMethod -Uri $uri -Headers @{
+                $response = Invoke-CIPPRestMethod -Uri $uri -Headers @{
                     Authorization = "Bearer $token"
                 } -Method Get -ErrorAction Stop
                 break

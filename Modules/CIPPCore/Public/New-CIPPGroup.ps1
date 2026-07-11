@@ -47,7 +47,7 @@ function New-CIPPGroup {
         $TenMinutesAgo = (Get-Date).AddMinutes(-10).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
         $CachedGroup = Get-CIPPAzDataTableEntity @GroupCacheTable -Filter "PartitionKey eq 'GroupCreation' and RowKey eq '$CacheRowKey' and Timestamp ge datetime'$TenMinutesAgo'"
         if ($CachedGroup -and $CachedGroup.GroupId) {
-            Write-LogMessage -API $APIName -tenant $TenantFilter -message "Group '$($GroupObject.displayName)' was recently created (cached id: $($CachedGroup.GroupId)), skipping duplicate creation" -Sev Info
+            Write-LogMessage -API $APIName -tenant $TenantFilter -message "Group '$($GroupObject.displayName)' was recently created (cached id: $($CachedGroup.GroupId)), skipping duplicate creation" -Sev Info -User $ExecutingUser
             return [PSCustomObject]@{
                 Success      = $true
                 Message      = "Group $($GroupObject.displayName) already exists (from cache)"
@@ -104,7 +104,7 @@ function New-CIPPGroup {
             }
         }
 
-        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Creating group $($GroupObject.displayName) of type $NormalizedGroupType$(if ($NeedsEmail) { " with email $Email" })" -Sev Info
+        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Creating group $($GroupObject.displayName) of type $NormalizedGroupType$(if ($NeedsEmail) { " with email $Email" })" -Sev Info -User $ExecutingUser
 
         # Handle Graph API groups (Security, Generic, AzureRole, Dynamic, M365)
         if ($NormalizedGroupType -in @('Generic', 'AzureRole', 'Dynamic', 'M365')) {
@@ -192,6 +192,19 @@ function New-CIPPGroup {
             } catch {
                 Write-Warning "Failed to write group creation cache for $($GroupObject.displayName): $($_.Exception.Message)"
             }
+
+            # Assign licenses for Security groups
+            if ($NormalizedGroupType -eq 'Generic' -and $GroupObject.licenses) {
+                $LicenseSkuIds = @($GroupObject.licenses | Where-Object { $_ } | ForEach-Object { $_.value ?? $_ })
+                if ($LicenseSkuIds.Count -gt 0) {
+                    try {
+                        $null = Set-CIPPGroupLicense -GroupId $GraphRequest.id -GroupName $GroupObject.displayName -AddLicenses $LicenseSkuIds -TenantFilter $TenantFilter -APIName $APIName
+                    } catch {
+                        Write-Warning "Failed to assign licenses to group $($GroupObject.displayName): $($_.Exception.Message)"
+                    }
+                }
+            }
+
             if ($GroupObject.subscribeMembers) {
                 #Waiting for group to become available in Exo.
                 Start-Sleep -Seconds 10
@@ -262,6 +275,18 @@ function New-CIPPGroup {
                 }
 
                 $GraphRequest = New-ExoRequest -tenantid $TenantFilter -cmdlet 'New-DistributionGroup' -cmdParams $ExoParams
+
+                $Aliases = @($GroupObject.aliases -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+                $SetParams = @{ Identity = $GraphRequest.Identity }
+                if ($GroupObject.hideFromGAL) {
+                    $SetParams.HiddenFromAddressListsEnabled = $true
+                }
+                if ($Aliases.Count -gt 0) {
+                    $SetParams.EmailAddresses = @{ '@odata.type' = '#Exchange.GenericHashTable'; Add = @($Aliases | ForEach-Object { "smtp:$_" }) }
+                }
+                if ($SetParams.Keys.Count -gt 1) {
+                    $null = New-ExoRequest -tenantid $TenantFilter -cmdlet 'Set-DistributionGroup' -cmdParams $SetParams
+                }
             }
 
             $Result = [PSCustomObject]@{
@@ -287,12 +312,12 @@ function New-CIPPGroup {
             }
         }
 
-        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Created group $($GroupObject.displayName) with id $($Result.GroupId)" -Sev Info
+        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Created group $($GroupObject.displayName) with id $($Result.GroupId)" -Sev Info -User $ExecutingUser
         return $Result
 
     } catch {
         $ErrorMessage = Get-CippException -Exception $_
-        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Group creation failed for $($GroupObject.displayName): $($ErrorMessage.NormalizedError)" -Sev Error -LogData $ErrorMessage
+        Write-LogMessage -API $APIName -tenant $TenantFilter -message "Group creation failed for $($GroupObject.displayName): $($ErrorMessage.NormalizedError)" -Sev Error -LogData $ErrorMessage -User $ExecutingUser
 
         return [PSCustomObject]@{
             Success   = $false
